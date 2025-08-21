@@ -1,23 +1,44 @@
 using Plots
 
-const l = 1.
+const l₁ = 1.
+const l₂ = 2.
 const g = 9.8
-const m = 1.
+const m₁ = 1.
+const m₂ = 2.
 
 # derivative
-const f((θ, θ̇)) = [θ̇, -g / l * sin(θ)]
+const f((θ, θ̇, ϕ, ϕ̇)) = begin
+    A = [(m₁+m₂)l₁ m₂*l₂*cos(ϕ - θ);
+        l₁*cos(ϕ - θ) l₂]
+    v = [-m₂ * l₂ * ϕ̇^2 * sin(ϕ - θ) - (m₁ + m₂)g * sin(θ),
+        -g * sin(ϕ) - l₁ * θ̇^2 * sin(ϕ - θ)]
+    x = A \ v
+    [θ̇, x[1], ϕ̇, x[2]]
+end
 
 # energy
-const U((θ, θ̇)) = m * g * l * (1 - cos(θ))
-const K((θ, θ̇)) = 0.5m * l^2 * θ̇^2
+const U((θ, θ̇, ϕ, ϕ̇)) = begin
+    V₁ = m₁ * g * l₁ * (1 - cos(θ))
+    V₂ = m₂ * g * (l₁ * (1 - cos(θ)) + l₂ * (1 - cos(ϕ)))
+    V₁ + V₂
+end
+const K((θ, θ̇, ϕ, ϕ̇)) = begin
+    T₁ = 0.5m₁ * l₁^2 * θ̇^2
+    T₂ = 0.5m₂ * (l₁^2 * θ̇^2 + l₂^2 * ϕ̇^2 + 2l₁ * l₂ * θ̇ * ϕ̇ * cos(ϕ - θ))
+    T₁ + T₂
+end
 
-const T = 3
+const T = 5
 const Δt = 0.01
 const N = round(Int, T / Δt)
+const FPS = 15
+const every = round(Int, 1 / FPS / Δt)
 
-# state vector: [θ, θ̇]
-y = fill(0., (2, N))
+# state vector: [θ₁, θ̇₁, θ₂, θ̇₂]
+y = fill(0., (4, N))
+# initial conditions
 y[1, 1] = π / 6
+y[3, 1] = π / 6
 
 for i in 1:N-1
     # RK4
@@ -29,18 +50,22 @@ for i in 1:N-1
 end
 
 animation = @animate for i in 1:N
-    pos = [l * sin(y[1, i]), -l * cos(y[1, i])]
-    pendulum_plot = plot([0, pos[1]], [0, pos[2]], xlims=(-1.1l, 1.1l), ylims=(-1.5l, 0),
-        aspect_ratio=:equal, lw=3, marker=:circle)
+    p1 = [l₁ * sin(y[1, i]), -l₁ * cos(y[1, i])]
+    p2 = p1 .+ [l₂ * sin(y[3, i]), -l₂ * cos(y[3, i])]
+    pendulum_plot = plot([0, p1[1]], [0, p1[2]],
+        xlims=(-1.1(l₁ + l₂), 1.1(l₁ + l₂)), ylims=(-1.5(l₁ + l₂), 0),
+        aspect_ratio=:equal, lw=3, marker=:circle, label="")
+    plot!([p1[1], p2[1]], [p1[2], p2[2]], lw=3, marker=:circle, label="")
 
-    t = Δt * (1:i)
-    potential = transpose(mapslices(U, y[:, 1:i], dims=1))
-    kinetic = transpose(mapslices(K, y[:, 1:i], dims=1))
-    energy_plot = plot(t, potential, xlabel="Time", ylabel="Energy", label="Potential")
-    plot!(t, kinetic, label="Kinetic")
-    plot!(t, potential + kinetic, label="Total")
+    # energy plot
+    # t = Δt * (1:i)
+    # potential = transpose(mapslices(U, y[:, 1:i], dims=1))
+    # kinetic = transpose(mapslices(K, y[:, 1:i], dims=1))
+    # energy_plot = plot(t, potential, xlabel="Time", ylabel="Energy", label="Potential")
+    # plot!(t, kinetic, label="Kinetic")
+    # plot!(t, potential + kinetic, label="Total")
 
-    plot(pendulum_plot, energy_plot, layout=(2, 1))
-end
+    # plot(pendulum_plot, energy_plot, layout=(2, 1))
+end every every
 
-gif(animation, fps=1 / Δt)
+gif(animation, fps=FPS)
