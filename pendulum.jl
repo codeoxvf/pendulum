@@ -7,6 +7,7 @@ const m₁ = 1.
 const m₂ = 2.
 
 # derivative
+# TODO: symbolic diff from energy functions?
 const f((θ, θ̇, ϕ, ϕ̇)) = begin
     A = [(m₁+m₂)l₁ m₂*l₂*cos(ϕ - θ);
         l₁*cos(ϕ - θ) l₂]
@@ -34,7 +35,7 @@ const N = round(Int, T / Δt)
 const FPS = 15
 const every = round(Int, 1 / FPS / Δt)
 
-# state vector: [θ₁, θ̇₁, θ₂, θ̇₂]
+# state vector: [θ, θ̇, ϕ, ϕ̇]
 y = fill(0., (4, N))
 # initial conditions
 y[1, 1] = π / 6
@@ -68,4 +69,4 @@ animation = @animate for i in 1:N
     # plot(pendulum_plot, energy_plot, layout=(2, 1))
 end every every
 
-gif(animation, fps=FPS)
+gif(animation, "animation.gif", fps=FPS)
