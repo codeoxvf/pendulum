@@ -6,6 +6,7 @@ Uses 4th-order Runge-Kutta to numerically solve the Euler-Lagrange equations.
 With step size $\Delta t = 0.01\,\mathrm{s}$, the loss of energy due to numerical error is visible.
 
 ![](energy.gif)
+
 The system is described by:
 $$\begin{align*}
     T_1 &= \frac12 m_1 l_1^2 \dot\theta^2, \\
